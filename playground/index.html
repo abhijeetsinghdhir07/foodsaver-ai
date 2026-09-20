@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FoodSaver AI</title>
+    <link rel="stylesheet" href="style.css" />
+    <!-- TensorFlow.js + MobileNet for on-device image classification -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0/dist/mobilenet.min.js"></script>
+  </head>
+  <body>
+
+    <!-- ── Sticky Navbar ── -->
+    <nav class="navbar" id="navbar">
+      <div class="nav-inner">
+        <a href="#home" class="nav-brand">🌿 FoodSaver AI</a>
+        <ul class="nav-links">
+          <li><a href="#home" class="nav-link">Home</a></li>
+          <li><a href="#features" class="nav-link">Features</a></li>
+          <li><a href="#generator" class="nav-link">Recipe Generator</a></li>
+          <li><a href="#impact" class="nav-link">Impact</a></li>
+        </ul>
+        <a href="#generator" class="nav-cta">Try App</a>
+        <button class="nav-burger" id="nav-burger" aria-label="Toggle menu">&#9776;</button>
+      </div>
+    </nav>
+
+    <!-- ── Hero Section ── -->
+    <section class="hero" id="home">
+      <div class="hero-inner">
+        <span class="hero-badge">🌍 Aligned with UN SDG 12</span>
+        <h1 class="hero-headline">Turn Leftovers into<br><span class="hero-accent">Gourmet Meals</span><br>&amp; Cut Food Waste</h1>
+        <p class="hero-sub">
+          FoodSaver AI uses intelligent recipe generation to help you cook smarter,
+          waste less, and contribute to <strong>Responsible Consumption &amp; Production</strong> —
+          one meal at a time.
+        </p>
+        <a href="#generator" class="hero-btn">🚀 Launch Recipe Finder</a>
+      </div>
+    </section>
+
+    <!-- ── Metrics Strip ── -->
+    <div class="metrics-strip" id="features">
+      <div class="metric">
+        <span class="metric-value">1.3B Tons</span>
+        <span class="metric-label">Food Wasted Annually</span>
+      </div>
+      <div class="metric-divider"></div>
+      <div class="metric">
+        <span class="metric-value">Save ~30%</span>
+        <span class="metric-label">on Grocery Bills</span>
+      </div>
+      <div class="metric-divider"></div>
+      <div class="metric">
+        <span class="metric-value">Zero Scrap</span>
+        <span class="metric-label">Kitchen Philosophy</span>
+      </div>
+      <div class="metric-divider"></div>
+      <div class="metric">
+        <span class="metric-value">SDG 12</span>
+        <span class="metric-label">Responsible Consumption</span>
+      </div>
+    </div>
+
+    <!-- ── Generator Section ── -->
+    <main id="generator">
+      <div class="section-label">Recipe Generator</div>
+      <h2 class="section-title">What's in your kitchen?</h2>
+      <p class="section-sub">Type your ingredients or snap a photo — we'll handle the rest.</p>
+
+      <div class="generator-card">
+
+        <!-- Drag & Drop Image Upload -->
+        <div class="upload-zone" id="upload-zone">
+          <input type="file" id="image-input" accept="image/jpeg, image/png, image/webp" multiple hidden />
+          <div class="upload-placeholder" id="upload-placeholder">
+            <span class="upload-icon">☁️</span>
+            <p class="upload-text"><strong>Upload or Snap Photos</strong> of your ingredients</p>
+            <p class="upload-hint">Drag &amp; drop or <button class="upload-browse" id="upload-browse">browse files</button></p>
+          </div>
+          <div class="format-badge">Accepted Formats: JPG, PNG, WEBP &nbsp;·&nbsp; Max 5 MB per image</div>
+          <div class="cv-badge hidden" id="cv-badge">
+            <span class="cv-dot"></span> <span id="cv-status">Analysing images…</span>
+          </div>
+        </div>
+
+        <!-- Image Gallery -->
+        <div class="img-gallery hidden" id="img-gallery"></div>
+
+        <!-- Ingredient Tag Chips -->
+        <div class="tags-section hidden" id="tags-section">
+          <p class="tags-label">Detected ingredients <span class="tags-hint">(click × to remove)</span></p>
+          <div class="tags-container" id="tags-container"></div>
+          <button class="add-tag-btn" id="add-tag-btn">+ Add more</button>
+          <div class="add-tag-input hidden" id="add-tag-input-wrap">
+            <input type="text" id="add-tag-input" class="tag-text-input" placeholder="Type ingredient & press Enter" />
+          </div>
+        </div>
+
+        <!-- Text Input -->
+        <div class="input-divider"><span>or type below</span></div>
+
+        <label for="ingredients" class="input-label">What ingredients do you have?</label>
+        <textarea
+          id="ingredients"
+          class="ingredients-input"
+          placeholder="e.g. tomatoes, spinach, garlic, eggs..."
+          rows="3"
+        ></textarea>
+        <p class="detection-warning hidden" id="detection-warning">⚠️ Detection unclear. Please type your ingredients.</p>
+        <div class="inline-chips hidden" id="inline-chips"></div>
+        <button id="generate-btn" class="generate-btn">🍃 Generate Recipe</button>
+      </div>
+
+      <!-- Results -->
+      <section id="results" class="results-container hidden">
+        <div class="results-card" id="recipe-card">
+          <h2 class="card-title">🥗 Suggested Recipe</h2>
+          <div class="impact-badge">🌍 ~0.5kg Food Waste Prevented</div>
+          <div id="recipe-output" class="card-body"></div>
+          <p class="safety-disclaimer" style="font-size: 0.8rem; font-style: italic; color: #666; margin-top: 15px;">Note: AI-generated recipes are for inspiration. Always ensure raw ingredients are safe to consume and free of allergens.</p>
+        </div>
+
+        <div class="results-card" id="nutrition-card">
+          <h2 class="card-title">🥦 Nutritional Estimate</h2>
+          <div id="nutrition-output" class="card-body">
+            <div class="nutrition-badges">
+              <span class="badge" id="badge-calories"></span>
+              <span class="badge" id="badge-protein"></span>
+              <span class="badge" id="badge-fats"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="results-card" id="tips-card">
+          <h2 class="card-title">🧊 How to Store Longer &amp; Zero-Waste Tips</h2>
+          <div id="tips-output" class="card-body"></div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ── Impact Section ── -->
+    <section class="impact-section" id="impact">
+      <div class="impact-inner">
+        <h2 class="impact-title">Our Impact Mission</h2>
+        <p class="impact-sub">Every recipe generated is a step toward a more sustainable food system.</p>
+        <div class="impact-cards">
+          <div class="impact-card">
+            <span class="impact-icon">♻️</span>
+            <h3>Reduce Food Waste</h3>
+            <p>Transform overlooked scraps and surplus ingredients into flavourful, nutritious meals.</p>
+          </div>
+          <div class="impact-card">
+            <span class="impact-icon">🌱</span>
+            <h3>Sustainable Eating</h3>
+            <p>Lower your carbon footprint by using what you have rather than buying more.</p>
+          </div>
+          <div class="impact-card">
+            <span class="impact-icon">💡</span>
+            <h3>Smart Kitchen AI</h3>
+            <p>Intelligent ingredient parsing, nutrition estimates, and zero-waste storage guidance.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Footer ── -->
+    <footer class="site-footer">
+      <p>🌿 FoodSaver AI &mdash; Built for UN SDG 12 &bull; Responsible Consumption &amp; Production</p>
+    </footer>
+
+    <!-- ── Responsible AI Footer ── -->
+    <footer class="rai-footer">
+      <p class="rai-title">Built with Responsible AI</p>
+      <div class="rai-items">
+        <span>🔒 <strong>Privacy:</strong> No personal data or location tracked.</span>
+        <span>⚖️ <strong>Fairness:</strong> Unbiased recipe generation.</span>
+        <span>🛡️ <strong>Ethics:</strong> Always verify recipes for personal allergens.</span>
+      </div>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>
